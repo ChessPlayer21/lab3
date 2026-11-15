@@ -14,33 +14,27 @@ from sklearn.preprocessing import StandardScaler
 
 
 def train_linear_regression(data: RegressionInput) -> RegressionResult:
-    X= data.train_features
-    Y = data.train_target
-    epochs = data.epochs
+    X = np.asarray(data.train_features, dtype=float)
+    y = np.asarray(data.train_target, dtype=float)
+    n, p = X.shape
+    lr = data.learning_rate
 
-    weight = 0.0
-    shift = 0.0
-    mse_history = []
+    w = np.zeros(p)
+    b = 0.0
+    history = []
 
-    for epoch in range(epochs):
-        error = (weight * X + shift) - Y     
+    for _ in range(data.epochs):
+        y_pred = X @ w + b
+        err = y_pred - y
+        dw = (2 / n) * (X.T @ err)
+        db = (2 / n) * err.sum()
+        w -= lr * dw
+        b -= lr * db
+        history.append(float(np.mean((X @ w + b - y) ** 2)))
 
-        dw = (2 / len(X)) * (error * X).sum()      
-        db = (2 / len(X)) * error.sum()            
+    preds = np.asarray(data.test_features, dtype=float) @ w + b
+    return RegressionResult(weights=w, bias=b, loss_history=history, predictions=preds)
 
-        weight = weight - data.learning_rate * dw                   
-        shift = shift - data.learning_rate * db  
-
-        mse_history.append((error ** 2).mean())
-
-    test_predictions = weight * data.test_features + shift
-
-    return RegressionResult(
-        weights=weight,             
-        bias=shift,                  
-        loss_history=mse_history,    
-        predictions=test_predictions,
-    )
 
 
 def train_logistic_classifier(data: ClassificationInput) -> ClassificationResult:
